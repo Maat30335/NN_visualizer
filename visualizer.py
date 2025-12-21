@@ -1,52 +1,38 @@
 import time
 import numpy as np
 import torch
-import torch.nn as nn
 import viser
 
-
-# --- 1. DEFINE A MOCK NERF MODEL ---
-class MockNeRF(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.center = torch.tensor([0.0, 0.0, 0.0])
-
-    def forward(self, x):
-        dist = torch.norm(x - self.center, dim=1, keepdim=True)
-        density = 15.0 * torch.exp(-2.0 * dist ** 2)
-        rgb = (torch.sin(x * 2.0) + 1.0) / 2.0
-        return rgb, density
+# IMPORT YOUR MODEL CLASS
+from nerf_network import NeRFModel
 
 
-# --- 2. CONFIGURATION ---
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-GRID_SIZE = 30
-SCENE_BOUNDS = 2.0
-
-
-def main():
+def start_visualizer(model, device="cuda", grid_size=30, scene_bounds=2.0):
+    """
+    Generic function to visualize ANY NeRF-like model.
+    """
     server = viser.ViserServer()
-    print("Viser server started at http://localhost:8080")
+    print(f"Viser server started at http://localhost:8080")
 
-    model = MockNeRF().to(DEVICE)
+    model = model.to(device)
     model.eval()
 
-    # --- 3. PRE-COMPUTE DATA ---
-    print("Generating input positions...")
-    linspace = torch.linspace(-SCENE_BOUNDS, SCENE_BOUNDS, GRID_SIZE)
+    # --- 1. PRE-COMPUTE DATA ---
+    print(f"Sampling {grid_size}x{grid_size}x{grid_size} grid...")
+    linspace = torch.linspace(-scene_bounds, scene_bounds, grid_size)
     grid_x, grid_y, grid_z = torch.meshgrid(linspace, linspace, linspace, indexing='ij')
-    positions_tensor = torch.stack([grid_x, grid_y, grid_z], dim=-1).reshape(-1, 3).to(DEVICE)
+    positions_tensor = torch.stack([grid_x, grid_y, grid_z], dim=-1).reshape(-1, 3).to(device)
 
     print("Querying the network...")
     with torch.no_grad():
         predicted_rgb, predicted_density = model(positions_tensor)
 
-    # Move to CPU/Numpy once (optimization)
+    # Move to CPU/Numpy for Viser
     all_points = positions_tensor.cpu().numpy()
     all_colors = predicted_rgb.cpu().numpy()
     all_densities = predicted_density.cpu().numpy().flatten()
 
-    # --- 4. GUI SETUP ---
+    # --- 2. GUI SETUP ---
     density_threshold_handle = server.gui.add_slider(
         "Density Threshold", min=0.0, max=5.0, step=0.1, initial_value=0.5
     )
@@ -55,8 +41,7 @@ def main():
         "Size Scale", min=0.001, max=0.1, step=0.001, initial_value=0.01
     )
 
-    # --- 5. THE UPDATE FUNCTION ---
-    # This function runs ONLY when a slider moves
+    # --- 3. THE UPDATE FUNCTION ---
     def update_scene(_):
         threshold = density_threshold_handle.value
         size_mult = size_multiplier_handle.value
@@ -73,6 +58,7 @@ def main():
             variances = radii ** 2
 
             num_points = len(active_points)
+            # Create (N, 3, 3) diagonal covariance matrices
             covariances = np.zeros((num_points, 3, 3), dtype=np.float32)
             covariances[:, 0, 0] = variances
             covariances[:, 1, 1] = variances
@@ -88,22 +74,30 @@ def main():
                 covariances=covariances
             )
         else:
-            # If no points meet the threshold, remove the object
             server.scene.remove("/nerf_splats")
 
-    # --- 6. ATTACH LISTENERS ---
-    # "When this slider changes, run update_scene"
+    # --- 4. ATTACH LISTENERS ---
     density_threshold_handle.on_update(update_scene)
     size_multiplier_handle.on_update(update_scene)
 
-    # Run once at startup to show the initial state
+    # Init
     update_scene(None)
 
-    # Keep the script alive
     print("Visualizer ready. Ctrl+C to exit.")
     while True:
         time.sleep(10.0)
 
 
+# --- MAIN ENTRY POINT ---
 if __name__ == "__main__":
-    main()
+    # 1. SETUP
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # 2. LOAD YOUR MODEL
+    model = NeRFModel()
+
+    # OPTIONAL: Load trained weights if you have them
+    # model.load_state_dict(torch.load("my_trained_nerf.pth"))
+
+    # 3. RUN VISUALIZER
+    start_visualizer(model, device=DEVICE, grid_size=30)
