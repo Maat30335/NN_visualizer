@@ -1,69 +1,60 @@
 import torch
 import torch.nn as nn
 from housing_network import HousingModel
-
-# Import the generic tool you created in the previous step
 from visualizer import start_visualizer
 
 
 class HousingNeRFAdapter(nn.Module):
-    """
-    Adapts the 8D Housing Model to look like a 3D NeRF Model.
-    """
-
     def __init__(self, housing_model):
         super().__init__()
         self.housing_model = housing_model
 
     def forward(self, x_3d):
         """
-        Input: x_3d (N, 3)  <-- From Viser
+        Input: x_3d (N, 3)
         Output: rgb (N, 3), density (N, 1)
         """
         device = x_3d.device
         N = x_3d.shape[0]
 
-        # 1. CONSTRUCT THE 8-DIMENSIONAL INPUT
-        # We initialize with 0.0. Since the model was trained on StandardScaled data,
-        # 0.0 equals the "Average" for that feature.
+        # 1. Map Viser inputs to Model Inputs
         inputs_8d = torch.zeros((N, 8), device=device)
+        inputs_8d[:, 6] = x_3d[:, 0]  # Lat
+        inputs_8d[:, 7] = x_3d[:, 1]  # Long
+        inputs_8d[:, 0] = x_3d[:, 2]  # Income
 
-        # 2. MAP VISER AXES TO MODEL FEATURES
-        # Viser X -> Latitude (Feature 6)
-        inputs_8d[:, 6] = x_3d[:, 0]
-        # Viser Y -> Longitude (Feature 7)
-        inputs_8d[:, 7] = x_3d[:, 1]
-        # Viser Z -> Median Income (Feature 0)
-        inputs_8d[:, 0] = x_3d[:, 2]
+        # 2. Get Price Prediction
+        price = self.housing_model(inputs_8d)
 
-        # 3. GET PREDICTION
-        price = self.housing_model(inputs_8d)  # Output shape (N, 1)
-
-        # 4. MAP PRICE TO DENSITY
-        # Use exponential to ensure density is positive and sharp
-        density = torch.exp(price)
-
-        # 5. MAP PRICE TO COLOR
-        # Sigmoid maps prediction to 0..1 range
-        # High Price = Red, Low Price = Blue
+        # --- FIX 1: BETTER COLOR MAPPING ---
+        # Sigmoid maps (-inf, inf) -> (0, 1)
+        # 0.0 = Blue (Cheap), 1.0 = Red (Expensive)
         val = torch.sigmoid(price)
-        red = val
-        green = torch.zeros_like(val)
-        blue = 1.0 - val
 
+        # Create a "Cool-to-Warm" gradient
+        # Blue channel is high when val is low
+        red = val
+        green = torch.zeros_like(val)  # Keep it simple
+        blue = 1.0 - val
         rgb = torch.cat([red, green, blue], dim=1)
+
+        # --- FIX 2: BETTER DENSITY/SIZE MAPPING ---
+        # Old way: density = torch.exp(price)  <-- Explodes too fast!
+
+        # New way: Map price to a 0.1 to 1.0 range
+        # We use sigmoid again so it stays controlled between 0 and 1
+        # We add +0.1 so even "cheap" (0.0) houses have 0.1 density (visible!)
+        density = (torch.sigmoid(price) * 0.9) + 0.1
 
         return rgb, density
 
 
 if __name__ == "__main__":
-    # 1. Load the Real Model
+    # Load and Run
     real_model = HousingModel()
     real_model.load_state_dict(torch.load("housing_model.pth"))
 
-    # 2. Wrap it in the Adapter
     adapter = HousingNeRFAdapter(real_model)
 
-    # 3. Launch the Generic Visualizer
-    # We assume 'visualizer.py' is in the same folder
-    start_visualizer(adapter, grid_size=40)
+    # We increase the bounds slightly to see more context
+    start_visualizer(adapter, grid_size=40, scene_bounds=2.5)
