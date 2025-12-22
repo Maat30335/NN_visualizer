@@ -2,45 +2,43 @@ import argparse
 import torch
 from visualizer import start_visualizer
 
-# Import your experiments
-# Note: You might need to move your adapter classes into these files
+# Import Experiments
 from experiments.nerf_network import NeRFModel
-from experiments.housing_network import HousingModel
 from experiments.housing_visualizer import HousingNeRFAdapter
+# Import our new Trainer
+from experiments.housing_trainer import HousingTrainer
 
 
 def run_nerf():
     print("Loading NeRF Toy...")
     model = NeRFModel()
-    # If you had weights: model.load_state_dict(...)
-
-    # NeRF is already 3D, so maybe it doesn't need an adapter?
-    # Or you can wrap it if you want to normalize inputs.
-    # For now, let's assume NeRFModel works directly with visualizer.
     start_visualizer(model, scene_bounds=2.0)
 
 
 def run_housing():
-    print("Loading Housing Manifold...")
-    # 1. Load Real Model
-    real_model = HousingModel()
-    try:
-        real_model.load_state_dict(torch.load("experiments/housing_model.pth"))
-    except FileNotFoundError:
-        print("Error: 'housing_model.pth' not found. Run housing_train.py first!")
-        return
+    print("Initializing Housing Trainer...")
+    # 1. Create the Trainer (This loads data and creates the 'real' model)
+    #    We let the visualizer detect the device, or we pass one explicitly.
+    #    Let's rely on standard PyTorch auto-detection inside the classes.
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if torch.backends.mps.is_available(): device = "mps"
 
-    # 2. Wrap in Adapter
-    adapter = HousingNeRFAdapter(real_model)
+    trainer = HousingTrainer(device=device)
 
-    # 3. Run
-    start_visualizer(adapter, grid_size=40, scene_bounds=2.5)
+    # 2. Create the Adapter
+    #    The adapter needs the trainer's model to forward-pass correctly.
+    #    Important: We pass the reference 'trainer.model'.
+    #    When trainer.step() updates the model, the adapter sees the changes instantly.
+    adapter = HousingNeRFAdapter(trainer.model)
+
+    # 3. Start Visualizer
+    #    We pass 'adapter' for drawing, and 'trainer' for the GUI buttons.
+    start_visualizer(adapter, trainer=trainer, device=device, grid_size=30, scene_bounds=2.5)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Neural Network Visualizer")
-    parser.add_argument("mode", choices=["nerf", "housing"], help="Which model to visualize")
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument("mode", choices=["nerf", "housing"], help="Which experiment to run")
     args = parser.parse_args()
 
     if args.mode == "nerf":
