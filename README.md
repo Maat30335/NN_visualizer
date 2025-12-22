@@ -14,3 +14,7 @@ This one is a neural network learning housing prices in California.
 ![housing_train](pics/housing_train.gif)
 
 This highlights the main problem of this approach. The network was trained on many different features, but the only inputs shown are Lat and Long, and median income (as x,y, and z), and the output (price) is shown as sphere size and color (blue -> red). However, you can still see how the price is concentrated in the top right corner, indicating a region preference (along with an obvious correlation with income).
+
+To try this out, simply run
+`python run.py housing`
+Replace "housing" with "torus" or "nerf" for the other ones
