@@ -103,7 +103,7 @@ def start_visualizer(model, device=None, grid_size=30, scene_bounds=2.0):
 
 # --- MAIN ENTRY POINT (For testing only) ---
 if __name__ == "__main__":
-    from nerf_network import NeRFModel
+    from experiments.nerf_network import NeRFModel
 
     model = NeRFModel()
     # No need to specify device anymore, it will auto-detect

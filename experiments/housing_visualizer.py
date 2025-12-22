@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from housing_network import HousingModel
+from .housing_network import HousingModel
 from visualizer import start_visualizer
 
 
