@@ -5,7 +5,7 @@ Basically, I was going to implement NeRFs, but then I had the thought of
 
 "NeRF is just a clever way of viewing a neural network that fit itself to a scene, but what if we view other neural networks in the same way?"
 
-It turned out to be a slightly cool idea, but of questionable utility. The biggest problem is that NeRFs gives us a way to view 5D --> 4D continuous functions, and most neural networks don't fit in those constraints. However, I tried it out, and I maybe I could fit more networks with some dimension reduction in the future.
+It turned out to be a slightly cool idea, but of questionable utility. The biggest problem is that NeRFs gives us a way to view 5D --> 4D continuous functions, and most neural networks don't fit in those constraints. However, I tried it out, and I maybe I could fit more networks with some dimension reduction in the future. By the way, turns out this is not an original idea, though I don't think it's a very active area of research. Search "implicit neural representations" for more details. However, I don't think people have tried representing other neural networks (maybe because it doesn't really work haha)
 
 This is a neural network learning the shape of a torus, which I think is cool
 ![torus_train](pics/torus_train.gif)

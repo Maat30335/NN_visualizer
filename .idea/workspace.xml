@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7472046e-6770-4122-a05a-e62f94a4e9e1" name="Changes" comment="added torus example">
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pics/housing_train.gif" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pics/nerf_toy.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pics/torus_train.gif" afterDir="false" />
+    <list default="true" id="7472046e-6770-4122-a05a-e62f94a4e9e1" name="Changes" comment="added run instructions and requirements">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -155,7 +151,23 @@
       <option name="project" value="LOCAL" />
       <updated>1766431660957</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="added a README">
+      <option name="closed" value="true" />
+      <created>1766437476759</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1766437476759</updated>
+    </task>
+    <task id="LOCAL-00011" summary="added run instructions and requirements">
+      <option name="closed" value="true" />
+      <created>1766437827518</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1766437827518</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -168,6 +180,8 @@
     <MESSAGE value="refactor with a run file" />
     <MESSAGE value="real-time training visualization" />
     <MESSAGE value="added torus example" />
-    <option name="LAST_COMMIT_MESSAGE" value="added torus example" />
+    <MESSAGE value="added a README" />
+    <MESSAGE value="added run instructions and requirements" />
+    <option name="LAST_COMMIT_MESSAGE" value="added run instructions and requirements" />
   </component>
 </project>
